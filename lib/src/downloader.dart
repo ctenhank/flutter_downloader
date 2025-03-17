@@ -160,6 +160,7 @@ class FlutterDownloader {
             filename: item['file_name'] as String?,
             savedDir: item['saved_dir'] as String,
             timeCreated: item['time_created'] as int,
+            timeLastUpdated: item['time_last_updated'] as int,
 
             // allowCellular field is true by default (similar to enqueue())
             allowCellular: (item['allow_cellular'] as bool?) ?? true,
@@ -218,6 +219,7 @@ class FlutterDownloader {
             filename: item['file_name'] as String?,
             savedDir: item['saved_dir'] as String,
             timeCreated: item['time_created'] as int,
+            timeLastUpdated: item['time_last_updated'] as int,
 
             // allowCellular field is true by default (similar to enqueue())
             allowCellular: (item['allow_cellular'] as bool?) ?? true,

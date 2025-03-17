@@ -58,6 +58,7 @@ class DownloadTask {
     required this.filename,
     required this.savedDir,
     required this.timeCreated,
+    required this.timeLastUpdated,
     required this.allowCellular,
   });
 
@@ -79,6 +80,9 @@ class DownloadTask {
   /// Absolute path to the directory where the downloaded file will saved.
   final String savedDir;
 
+  /// Timestamp when the task was updated.
+  final int timeLastUpdated;
+
   /// Timestamp when the task was created.
   final int timeCreated;
 
@@ -87,7 +91,7 @@ class DownloadTask {
 
   @override
   String toString() =>
-      'DownloadTask(taskId: $taskId, status: $status, progress: $progress, url: $url, filename: $filename, savedDir: $savedDir, timeCreated: $timeCreated, allowCellular: $allowCellular)';
+      'DownloadTask(taskId: $taskId, status: $status, progress: $progress, url: $url, filename: $filename, savedDir: $savedDir, timeCreated: $timeCreated, timeLastUpdated: $timeLastUpdated, allowCellular: $allowCellular)';
 
   @override
   bool operator ==(Object other) {
@@ -103,6 +107,7 @@ class DownloadTask {
         other.filename == filename &&
         other.savedDir == savedDir &&
         other.timeCreated == timeCreated &&
+        other.timeLastUpdated == timeLastUpdated &&
         other.allowCellular == allowCellular;
   }
 
@@ -116,6 +121,7 @@ class DownloadTask {
       filename,
       savedDir,
       timeCreated,
+      timeLastUpdated,
       allowCellular,
     );
   }

@@ -24,6 +24,7 @@
 #define KEY_OPEN_FILE_FROM_NOTIFICATION @"open_file_from_notification"
 #define KEY_QUERY @"query"
 #define KEY_TIME_CREATED @"time_created"
+#define KEY_TIME_LAST_UPDATED @"time_last_updated"
 
 #define NULL_VALUE @"<null>"
 
@@ -462,9 +463,9 @@ static NSMutableDictionary<NSString*, NSMutableDictionary*> *_runningTaskById = 
 
     headers = [self escape:headers revert:NO];
     
-    NSString *query = @"INSERT INTO task (task_id, url, status, progress, file_name, saved_dir, headers, resumable, show_notification, open_file_from_notification, time_created) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+    NSString *query = @"INSERT INTO task (task_id, url, status, progress, file_name, saved_dir, headers, resumable, show_notification, open_file_from_notification, time_created, time_last_updated) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
     NSString *sanitizedFileName = [self sanitizeFilename:filename];
-    NSArray *values = @[taskId, url, @(status), @(progress), sanitizedFileName, savedDir, headers, @(resumable ? 1:0), @(showNotification ? 1 : 0), @(openFileFromNotification ? 1: 0), @([self currentTimeInMilliseconds])];
+    NSArray *values = @[taskId, url, @(status), @(progress), sanitizedFileName, savedDir, headers, @(resumable ? 1:0), @(showNotification ? 1 : 0), @(openFileFromNotification ? 1: 0), @([self currentTimeInMilliseconds]), @([self currentTimeInMilliseconds])];
     
     [_dbManager executeQuery:query withParameters:values];
     
@@ -480,9 +481,9 @@ static NSMutableDictionary<NSString*, NSMutableDictionary*> *_runningTaskById = 
 - (void) updateTask: (NSString*) taskId status: (int) status progress: (int) progress
 {
 
-    NSString *query = @"UPDATE task SET status = ?, progress = ? WHERE task_id = ?";
+    NSString *query = @"UPDATE task SET status = ?, progress = ?, time_last_updated = ? WHERE task_id = ?";
     
-    NSArray *values = @[@(status), @(progress), taskId];
+    NSArray *values = @[@(status), @(progress), @([self currentTimeInMilliseconds]), taskId];
     
     [_dbManager executeQuery:query withParameters:values];
     
@@ -498,10 +499,10 @@ static NSMutableDictionary<NSString*, NSMutableDictionary*> *_runningTaskById = 
 
 
 - (void)updateTask:(NSString *)taskId filename:(NSString *)filename {
-    NSString *query = @"UPDATE task SET file_name = ? WHERE task_id = ?";
+    NSString *query = @"UPDATE task SET file_name = ?, time_last_updated = ? WHERE task_id = ?";
     
     // Create an array to hold the parameter values
-    NSArray *values = @[filename, taskId];
+    NSArray *values = @[filename, @([self currentTimeInMilliseconds]), taskId ];
     
     [_dbManager executeQuery:query withParameters:values];
     
@@ -520,9 +521,9 @@ static NSMutableDictionary<NSString*, NSMutableDictionary*> *_runningTaskById = 
            progress:(int)progress
           resumable:(BOOL)resumable {
     
-    NSString *query = @"UPDATE task SET status = ?, progress = ?, resumable = ? WHERE task_id = ?";
+    NSString *query = @"UPDATE task SET status = ?, progress = ?, resumable = ?, time_last_updated = ? WHERE task_id = ?";
     
-    NSArray *values = @[@(status), @(progress), @(resumable ? 1 : 0), taskId];
+    NSArray *values = @[@(status), @(progress), @(resumable ? 1 : 0),  @([self currentTimeInMilliseconds]), taskId];
     
     [_dbManager executeQuery:query withParameters:values];
     
@@ -540,9 +541,9 @@ static NSMutableDictionary<NSString*, NSMutableDictionary*> *_runningTaskById = 
              status:(int)status
           resumable:(BOOL)resumable {
     
-    NSString *query = @"UPDATE task SET task_id = ?, status = ?, resumable = ?, time_created = ? WHERE task_id = ?";
+    NSString *query = @"UPDATE task SET task_id = ?, status = ?, resumable = ?, time_created = ?, time_last_updated = ? WHERE task_id = ?";
     
-    NSArray *values = @[newTaskId, @(status), @(resumable ? 1 : 0), @([self currentTimeInMilliseconds]), currentTaskId];
+    NSArray *values = @[newTaskId, @(status), @(resumable ? 1 : 0), @([self currentTimeInMilliseconds]),  @([self currentTimeInMilliseconds]), currentTaskId];
     
     [_dbManager executeQuery:query withParameters:values];
     
@@ -556,9 +557,9 @@ static NSMutableDictionary<NSString*, NSMutableDictionary*> *_runningTaskById = 
 }
 
 - (void)updateTask:(NSString *)taskId resumable:(BOOL)resumable {
-    NSString *query = @"UPDATE task SET resumable = ? WHERE task_id = ?";
+    NSString *query = @"UPDATE task SET resumable = ?, time_last_updated = ? WHERE task_id = ?";
     
-    NSArray *values = @[@(resumable ? 1 : 0), taskId];
+    NSArray *values = @[@(resumable ? 1 : 0), @([self currentTimeInMilliseconds]), taskId];
     
     [_dbManager executeQuery:query withParameters:values];
     
@@ -670,7 +671,9 @@ static NSMutableDictionary<NSString*, NSMutableDictionary*> *_runningTaskById = 
         int showNotification = [[record objectAtIndex:[_dbManager.arrColumnNames indexOfObject:@"show_notification"]] intValue];
         int openFileFromNotification = [[record objectAtIndex:[_dbManager.arrColumnNames indexOfObject:@"open_file_from_notification"]] intValue];
         long long timeCreated = [[record objectAtIndex:[_dbManager.arrColumnNames indexOfObject:@"time_created"]] longLongValue];
-        return [NSDictionary dictionaryWithObjectsAndKeys:taskId, KEY_TASK_ID, @(status), KEY_STATUS, @(progress), KEY_PROGRESS, url, KEY_URL, filename, KEY_FILE_NAME, headers, KEY_HEADERS, savedDir, KEY_SAVED_DIR, [NSNumber numberWithBool:(resumable == 1)], KEY_RESUMABLE, [NSNumber numberWithBool:(showNotification == 1)], KEY_SHOW_NOTIFICATION, [NSNumber numberWithBool:(openFileFromNotification == 1)], KEY_OPEN_FILE_FROM_NOTIFICATION, @(timeCreated), KEY_TIME_CREATED, nil];
+        long long timeLastUpdated = [[record objectAtIndex:[_dbManager.arrColumnNames indexOfObject:@"time_last_updated"]] longLongValue];
+
+        return [NSDictionary dictionaryWithObjectsAndKeys:taskId, KEY_TASK_ID, @(status), KEY_STATUS, @(progress), KEY_PROGRESS, url, KEY_URL, filename, KEY_FILE_NAME, headers, KEY_HEADERS, savedDir, KEY_SAVED_DIR, [NSNumber numberWithBool:(resumable == 1)], KEY_RESUMABLE, [NSNumber numberWithBool:(showNotification == 1)], KEY_SHOW_NOTIFICATION, [NSNumber numberWithBool:(openFileFromNotification == 1)], KEY_OPEN_FILE_FROM_NOTIFICATION, @(timeCreated), KEY_TIME_CREATED, @(timeLastUpdated), KEY_TIME_LAST_UPDATED, nil];
     } @catch(NSException *exception) {
         NSLog(@"invalid task data: %@", exception);
         return [NSDictionary dictionary];

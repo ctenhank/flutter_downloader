@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_downloader/flutter_downloader.dart';
 import 'package:flutter_downloader_example/data.dart';
 import 'package:flutter_downloader_example/download_list_item.dart';
+import 'package:flutter_downloader_example/download_task_list_page.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 
@@ -394,6 +395,16 @@ class _MyHomePageState extends State<MyHomePage> {
                 ),
               ],
             ),
+          TextButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => DownloadTaskListPage(),
+                  ),
+                );
+              },
+              child: Text("toList"))
         ],
       ),
       body: Builder(

@@ -214,6 +214,7 @@ class FlutterDownloaderPlugin : MethodChannel.MethodCallHandler, FlutterPlugin {
             item["file_name"] = task.filename
             item["saved_dir"] = task.savedDir
             item["time_created"] = task.timeCreated
+            item["time_last_updated"] = task.timeLastUpdated
             item["allow_cellular"] = task.allowCellular
             array.add(item)
         }
@@ -233,6 +234,7 @@ class FlutterDownloaderPlugin : MethodChannel.MethodCallHandler, FlutterPlugin {
             item["file_name"] = task.filename
             item["saved_dir"] = task.savedDir
             item["time_created"] = task.timeCreated
+            item["time_last_updated"] = task.timeLastUpdated
             item["allow_cellular"] = task.allowCellular
             array.add(item)
         }

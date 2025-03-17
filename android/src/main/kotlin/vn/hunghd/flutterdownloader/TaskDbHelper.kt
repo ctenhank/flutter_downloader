@@ -62,6 +62,7 @@ class TaskDbHelper private constructor(context: Context) :
                 TaskEntry.COLUMN_NAME_SHOW_NOTIFICATION + " TINYINT DEFAULT 0, " +
                 TaskEntry.COLUMN_NAME_OPEN_FILE_FROM_NOTIFICATION + " TINYINT DEFAULT 0, " +
                 TaskEntry.COLUMN_NAME_TIME_CREATED + " INTEGER DEFAULT 0, " +
+                    TaskEntry.COLUMN_NAME_TIME_LAST_UPDATED + " INTEGER DEFAULT 0, " +
                 TaskEntry.COLUMN_SAVE_IN_PUBLIC_STORAGE + " TINYINT DEFAULT 0, " +
                 TaskEntry.COLUMN_ALLOW_CELLULAR + " TINYINT DEFAULT 1" +
                 ")"

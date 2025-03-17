@@ -6,36 +6,38 @@ import android.database.sqlite.SQLiteDatabase
 import android.provider.BaseColumns
 
 class TaskDao(private val dbHelper: TaskDbHelper) {
-    private val projection = arrayOf(
-        BaseColumns._ID,
-        TaskEntry.COLUMN_NAME_TASK_ID,
-        TaskEntry.COLUMN_NAME_PROGRESS,
-        TaskEntry.COLUMN_NAME_STATUS,
-        TaskEntry.COLUMN_NAME_URL,
-        TaskEntry.COLUMN_NAME_FILE_NAME,
-        TaskEntry.COLUMN_NAME_SAVED_DIR,
-        TaskEntry.COLUMN_NAME_HEADERS,
-        TaskEntry.COLUMN_NAME_MIME_TYPE,
-        TaskEntry.COLUMN_NAME_RESUMABLE,
-        TaskEntry.COLUMN_NAME_OPEN_FILE_FROM_NOTIFICATION,
-        TaskEntry.COLUMN_NAME_SHOW_NOTIFICATION,
-        TaskEntry.COLUMN_NAME_TIME_CREATED,
-        TaskEntry.COLUMN_SAVE_IN_PUBLIC_STORAGE,
-        TaskEntry.COLUMN_ALLOW_CELLULAR
-    )
+    private val projection =
+            arrayOf(
+                    BaseColumns._ID,
+                    TaskEntry.COLUMN_NAME_TASK_ID,
+                    TaskEntry.COLUMN_NAME_PROGRESS,
+                    TaskEntry.COLUMN_NAME_STATUS,
+                    TaskEntry.COLUMN_NAME_URL,
+                    TaskEntry.COLUMN_NAME_FILE_NAME,
+                    TaskEntry.COLUMN_NAME_SAVED_DIR,
+                    TaskEntry.COLUMN_NAME_HEADERS,
+                    TaskEntry.COLUMN_NAME_MIME_TYPE,
+                    TaskEntry.COLUMN_NAME_RESUMABLE,
+                    TaskEntry.COLUMN_NAME_OPEN_FILE_FROM_NOTIFICATION,
+                    TaskEntry.COLUMN_NAME_SHOW_NOTIFICATION,
+                    TaskEntry.COLUMN_NAME_TIME_CREATED,
+                    TaskEntry.COLUMN_NAME_TIME_LAST_UPDATED,
+                    TaskEntry.COLUMN_SAVE_IN_PUBLIC_STORAGE,
+                    TaskEntry.COLUMN_ALLOW_CELLULAR
+            )
 
     fun insertOrUpdateNewTask(
-        taskId: String?,
-        url: String?,
-        status: DownloadStatus,
-        progress: Int,
-        fileName: String?,
-        savedDir: String?,
-        headers: String?,
-        showNotification: Boolean,
-        openFileFromNotification: Boolean,
-        saveInPublicStorage: Boolean,
-        allowCellular: Boolean
+            taskId: String?,
+            url: String?,
+            status: DownloadStatus,
+            progress: Int,
+            fileName: String?,
+            savedDir: String?,
+            headers: String?,
+            showNotification: Boolean,
+            openFileFromNotification: Boolean,
+            saveInPublicStorage: Boolean,
+            allowCellular: Boolean
     ) {
         val db = dbHelper.writableDatabase
         val values = ContentValues()
@@ -49,20 +51,21 @@ class TaskDao(private val dbHelper: TaskDbHelper) {
         values.put(TaskEntry.COLUMN_NAME_MIME_TYPE, "unknown")
         values.put(TaskEntry.COLUMN_NAME_SHOW_NOTIFICATION, if (showNotification) 1 else 0)
         values.put(
-            TaskEntry.COLUMN_NAME_OPEN_FILE_FROM_NOTIFICATION,
-            if (openFileFromNotification) 1 else 0
+                TaskEntry.COLUMN_NAME_OPEN_FILE_FROM_NOTIFICATION,
+                if (openFileFromNotification) 1 else 0
         )
         values.put(TaskEntry.COLUMN_NAME_RESUMABLE, 0)
         values.put(TaskEntry.COLUMN_NAME_TIME_CREATED, System.currentTimeMillis())
+        values.put(TaskEntry.COLUMN_NAME_TIME_LAST_UPDATED, System.currentTimeMillis())
         values.put(TaskEntry.COLUMN_SAVE_IN_PUBLIC_STORAGE, if (saveInPublicStorage) 1 else 0)
         values.put(TaskEntry.COLUMN_ALLOW_CELLULAR, if (allowCellular) 1 else 0)
         db.beginTransaction()
         try {
             db.insertWithOnConflict(
-                TaskEntry.TABLE_NAME,
-                null,
-                values,
-                SQLiteDatabase.CONFLICT_REPLACE
+                    TaskEntry.TABLE_NAME,
+                    null,
+                    values,
+                    SQLiteDatabase.CONFLICT_REPLACE
             )
             db.setTransactionSuccessful()
         } catch (e: Exception) {
@@ -74,15 +77,7 @@ class TaskDao(private val dbHelper: TaskDbHelper) {
 
     fun loadAllTasks(): List<DownloadTask> {
         val db = dbHelper.readableDatabase
-        val cursor = db.query(
-            TaskEntry.TABLE_NAME,
-            projection,
-            null,
-            null,
-            null,
-            null,
-            null
-        )
+        val cursor = db.query(TaskEntry.TABLE_NAME, projection, null, null, null, null, null)
         val result: MutableList<DownloadTask> = ArrayList()
         while (cursor.moveToNext()) {
             result.add(parseCursor(cursor))
@@ -106,16 +101,17 @@ class TaskDao(private val dbHelper: TaskDbHelper) {
         val db = dbHelper.readableDatabase
         val whereClause = TaskEntry.COLUMN_NAME_TASK_ID + " = ?"
         val whereArgs = arrayOf(taskId)
-        val cursor = db.query(
-            TaskEntry.TABLE_NAME,
-            projection,
-            whereClause,
-            whereArgs,
-            null,
-            null,
-            BaseColumns._ID + " DESC",
-            "1"
-        )
+        val cursor =
+                db.query(
+                        TaskEntry.TABLE_NAME,
+                        projection,
+                        whereClause,
+                        whereArgs,
+                        null,
+                        null,
+                        BaseColumns._ID + " DESC",
+                        "1"
+                )
         var result: DownloadTask? = null
         while (cursor.moveToNext()) {
             result = parseCursor(cursor)
@@ -129,13 +125,14 @@ class TaskDao(private val dbHelper: TaskDbHelper) {
         val values = ContentValues()
         values.put(TaskEntry.COLUMN_NAME_STATUS, status.ordinal)
         values.put(TaskEntry.COLUMN_NAME_PROGRESS, progress)
+        values.put(TaskEntry.COLUMN_NAME_TIME_LAST_UPDATED, System.currentTimeMillis())
         db.beginTransaction()
         try {
             db.update(
-                TaskEntry.TABLE_NAME,
-                values,
-                TaskEntry.COLUMN_NAME_TASK_ID + " = ?",
-                arrayOf(taskId)
+                    TaskEntry.TABLE_NAME,
+                    values,
+                    TaskEntry.COLUMN_NAME_TASK_ID + " = ?",
+                    arrayOf(taskId)
             )
             db.setTransactionSuccessful()
         } catch (e: Exception) {
@@ -146,11 +143,11 @@ class TaskDao(private val dbHelper: TaskDbHelper) {
     }
 
     fun updateTask(
-        currentTaskId: String,
-        newTaskId: String?,
-        status: DownloadStatus,
-        progress: Int,
-        resumable: Boolean
+            currentTaskId: String,
+            newTaskId: String?,
+            status: DownloadStatus,
+            progress: Int,
+            resumable: Boolean
     ) {
         val db = dbHelper.writableDatabase
         val values = ContentValues()
@@ -159,13 +156,14 @@ class TaskDao(private val dbHelper: TaskDbHelper) {
         values.put(TaskEntry.COLUMN_NAME_PROGRESS, progress)
         values.put(TaskEntry.COLUMN_NAME_RESUMABLE, if (resumable) 1 else 0)
         values.put(TaskEntry.COLUMN_NAME_TIME_CREATED, System.currentTimeMillis())
+        values.put(TaskEntry.COLUMN_NAME_TIME_LAST_UPDATED, System.currentTimeMillis())
         db.beginTransaction()
         try {
             db.update(
-                TaskEntry.TABLE_NAME,
-                values,
-                TaskEntry.COLUMN_NAME_TASK_ID + " = ?",
-                arrayOf(currentTaskId)
+                    TaskEntry.TABLE_NAME,
+                    values,
+                    TaskEntry.COLUMN_NAME_TASK_ID + " = ?",
+                    arrayOf(currentTaskId)
             )
             db.setTransactionSuccessful()
         } catch (e: Exception) {
@@ -179,13 +177,15 @@ class TaskDao(private val dbHelper: TaskDbHelper) {
         val db = dbHelper.writableDatabase
         val values = ContentValues()
         values.put(TaskEntry.COLUMN_NAME_RESUMABLE, if (resumable) 1 else 0)
+        values.put(TaskEntry.COLUMN_NAME_TIME_LAST_UPDATED, System.currentTimeMillis())
+
         db.beginTransaction()
         try {
             db.update(
-                TaskEntry.TABLE_NAME,
-                values,
-                TaskEntry.COLUMN_NAME_TASK_ID + " = ?",
-                arrayOf(taskId)
+                    TaskEntry.TABLE_NAME,
+                    values,
+                    TaskEntry.COLUMN_NAME_TASK_ID + " = ?",
+                    arrayOf(taskId)
             )
             db.setTransactionSuccessful()
         } catch (e: Exception) {
@@ -200,13 +200,15 @@ class TaskDao(private val dbHelper: TaskDbHelper) {
         val values = ContentValues()
         values.put(TaskEntry.COLUMN_NAME_FILE_NAME, filename)
         values.put(TaskEntry.COLUMN_NAME_MIME_TYPE, mimeType ?: "unknown")
+        values.put(TaskEntry.COLUMN_NAME_TIME_LAST_UPDATED, System.currentTimeMillis())
+
         db.beginTransaction()
         try {
             db.update(
-                TaskEntry.TABLE_NAME,
-                values,
-                TaskEntry.COLUMN_NAME_TASK_ID + " = ?",
-                arrayOf(taskId)
+                    TaskEntry.TABLE_NAME,
+                    values,
+                    TaskEntry.COLUMN_NAME_TASK_ID + " = ?",
+                    arrayOf(taskId)
             )
             db.setTransactionSuccessful()
         } catch (e: Exception) {
@@ -237,32 +239,64 @@ class TaskDao(private val dbHelper: TaskDbHelper) {
         val status = cursor.getInt(cursor.getColumnIndexOrThrow(TaskEntry.COLUMN_NAME_STATUS))
         val progress = cursor.getInt(cursor.getColumnIndexOrThrow(TaskEntry.COLUMN_NAME_PROGRESS))
         val url = cursor.getString(cursor.getColumnIndexOrThrow(TaskEntry.COLUMN_NAME_URL))
-        val filename = cursor.getString(cursor.getColumnIndexOrThrow(TaskEntry.COLUMN_NAME_FILE_NAME))
-        val savedDir = cursor.getString(cursor.getColumnIndexOrThrow(TaskEntry.COLUMN_NAME_SAVED_DIR))
+        val filename =
+                cursor.getString(cursor.getColumnIndexOrThrow(TaskEntry.COLUMN_NAME_FILE_NAME))
+        val savedDir =
+                cursor.getString(cursor.getColumnIndexOrThrow(TaskEntry.COLUMN_NAME_SAVED_DIR))
         val headers = cursor.getString(cursor.getColumnIndexOrThrow(TaskEntry.COLUMN_NAME_HEADERS))
-        val mimeType = cursor.getString(cursor.getColumnIndexOrThrow(TaskEntry.COLUMN_NAME_MIME_TYPE))
-        val resumable = cursor.getShort(cursor.getColumnIndexOrThrow(TaskEntry.COLUMN_NAME_RESUMABLE)).toInt()
-        val showNotification = cursor.getShort(cursor.getColumnIndexOrThrow(TaskEntry.COLUMN_NAME_SHOW_NOTIFICATION)).toInt()
-        val clickToOpenDownloadedFile = cursor.getShort(cursor.getColumnIndexOrThrow(TaskEntry.COLUMN_NAME_OPEN_FILE_FROM_NOTIFICATION)).toInt()
-        val timeCreated = cursor.getLong(cursor.getColumnIndexOrThrow(TaskEntry.COLUMN_NAME_TIME_CREATED))
-        val saveInPublicStorage = cursor.getShort(cursor.getColumnIndexOrThrow(TaskEntry.COLUMN_SAVE_IN_PUBLIC_STORAGE)).toInt()
-        val allowCelluar = cursor.getShort(cursor.getColumnIndexOrThrow(TaskEntry.COLUMN_ALLOW_CELLULAR)).toInt()
+        val mimeType =
+                cursor.getString(cursor.getColumnIndexOrThrow(TaskEntry.COLUMN_NAME_MIME_TYPE))
+        val resumable =
+                cursor.getShort(cursor.getColumnIndexOrThrow(TaskEntry.COLUMN_NAME_RESUMABLE))
+                        .toInt()
+        val showNotification =
+                cursor.getShort(
+                                cursor.getColumnIndexOrThrow(
+                                        TaskEntry.COLUMN_NAME_SHOW_NOTIFICATION
+                                )
+                        )
+                        .toInt()
+        val clickToOpenDownloadedFile =
+                cursor.getShort(
+                                cursor.getColumnIndexOrThrow(
+                                        TaskEntry.COLUMN_NAME_OPEN_FILE_FROM_NOTIFICATION
+                                )
+                        )
+                        .toInt()
+        val timeCreated =
+                cursor.getLong(cursor.getColumnIndexOrThrow(TaskEntry.COLUMN_NAME_TIME_CREATED))
+        val timeLastUpdated =
+                cursor.getLong(
+                        cursor.getColumnIndexOrThrow(TaskEntry.COLUMN_NAME_TIME_LAST_UPDATED)
+                )
+
+        val saveInPublicStorage =
+                cursor.getShort(
+                                cursor.getColumnIndexOrThrow(
+                                        TaskEntry.COLUMN_SAVE_IN_PUBLIC_STORAGE
+                                )
+                        )
+                        .toInt()
+        val allowCelluar =
+                cursor.getShort(cursor.getColumnIndexOrThrow(TaskEntry.COLUMN_ALLOW_CELLULAR))
+                        .toInt()
         return DownloadTask(
-            primaryId,
-            taskId,
-            DownloadStatus.values()[status],
-            progress,
-            url,
-            filename,
-            savedDir,
-            headers,
-            mimeType,
-            resumable == 1,
-            showNotification == 1,
-            clickToOpenDownloadedFile == 1,
-            timeCreated,
-            saveInPublicStorage == 1,
-            allowCellular = allowCelluar == 1
+                primaryId,
+                taskId,
+                DownloadStatus.values()[status],
+                progress,
+                url,
+                filename,
+                savedDir,
+                headers,
+                mimeType,
+                resumable == 1,
+                showNotification == 1,
+                clickToOpenDownloadedFile == 1,
+                timeCreated,
+                timeLastUpdated,
+                saveInPublicStorage == 1,
+                allowCellular = allowCelluar == 1
         )
     }
 }
